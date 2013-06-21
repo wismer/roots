@@ -39,7 +39,10 @@ class Compiler extends EventEmitter
 			
 			adapter.compile fh, (err, compiled) ->
 				if err
-					return @.emit("error", err)
+					return @emit("error", err)
+
+				# if the compiler returns a function, it's probably compiling to ~html
+				to_html = typeof compiled is "function"
 
 				pass_through = ->
 					fh.contents = compiled
@@ -52,14 +55,10 @@ class Compiler extends EventEmitter
 					if fh.layout_path
 						compile_into_layout.call @, fh, adapter, compiled, (compiled_with_layout) ->
 							write compiled_with_layout
-
 					else if to_html
 						write(compiled(fh.locals()))
 					else
 						write(compiled)
-				
-				# if the compiler returns a function, it's probably compiling to ~html
-				to_html = typeof compiled is "function"
 
 				if intermediate
 					return pass_through()
@@ -127,14 +126,15 @@ get_adapters_by_extension = (extensions) ->
  * @return {[type]} [description]
 ###
 compile_into_layout = (fh, adapter, compiled, cb) ->
-	self = this
 	file_mock =
 		path: fh.layout_path
 		contents: fh.layout_contents
 
-	self.emit "error", "html compilers must output a function"  if typeof compiled isnt "function"
+	if typeof compiled isnt "function"
+		@emit "error", "html compilers must output a function"
+
 	adapter.compile file_mock, (err, layout) ->
-		return self.emit("error", err)  if err
+		return @emit("error", err)  if err
 		page = compiled(fh.locals())
 		rendered_template = layout(fh.locals(content: page))
 		cb rendered_template

@@ -9,6 +9,11 @@ _ = require("underscore")
 file_helper = require("./utils/file_helper")
 
 class Compiler extends EventEmitter
+	###*
+	 * either 'build' or 'dev'
+	 * @type {String}
+	 * @public
+	###
 	mode: 'build'
 
 	###*
@@ -71,6 +76,7 @@ class Compiler extends EventEmitter
 	 * @param {[type]} file [description]
 	 * @param {Compiler~doneCallback} cb
 	 * @return {[type]} [description]
+	 * @uses Compiler.mode
 	###
 	copy: (file, cb) ->
 		# TODO: Run the file copy operations as async (ncp)

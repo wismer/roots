@@ -42,7 +42,7 @@ class Compiler extends EventEmitter
 			unless intermediate
 				fh.parse_dynamic_content()
 
-			adapter.compile fh.path, fh.locals(), (err, compiled) ->
+			adapter.compile fh.path, fh.locals(), (err, compiled) =>
 				if err then return @emit 'error', err
 
 				pass_through = ->
@@ -55,7 +55,7 @@ class Compiler extends EventEmitter
 				write_file = ->
 					if fh.layout_path
 						fh.set_layout() # set up the layout if it's compiling to html
-						compile_into_layout fh, adapter, compiled, (compiled_with_layout) ->
+						@compile_into_layout fh, adapter, (compiled_with_layout) ->
 							write compiled_with_layout
 					else
 						write(compiled)
@@ -90,6 +90,19 @@ class Compiler extends EventEmitter
 		options.debug.log "copied #{file.replace(process.cwd(), '')}"
 		cb()
 
+	###*
+	 * [compile_into_layout description]
+	 * @param {[type]} fh [description]
+	 * @param {[type]} adapter [description]
+	 * @param {[type]} compiled [description]
+	 * @param {Function} cb [description]
+	 * @return {[type]} [description]
+	###
+	compile_into_layout: (fh, adapter, cb) ->
+		adapter.compile fh.layout_path, fh.locals(content: compiled), (err, layout) =>
+			if err then return @emit('error', err)
+			cb layout
+
 ###*
  * Called when the function that the callback was passed to is done
  * @callback Compiler~doneCallback
@@ -116,15 +129,3 @@ get_adapters_by_extension = (extensions) ->
 
 	matching_adapters
 
-###*
- * [compile_into_layout description]
- * @param {[type]} fh [description]
- * @param {[type]} adapter [description]
- * @param {[type]} compiled [description]
- * @param {Function} cb [description]
- * @return {[type]} [description]
-###
-compile_into_layout = (fh, adapter, compiled, cb) ->
-	adapter.compile fh.layout_path, fh.locals(content: compiled), (err, layout) ->
-		if err then return @emit('error', err)
-		cb layout

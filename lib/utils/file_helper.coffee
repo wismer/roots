@@ -5,6 +5,12 @@ output_path = require("./output_path")
 yaml_parser = require("./yaml_parser")
 
 class FileHelper
+  ###*
+   * [constructor description]
+   * @param {[type]} file [description]
+   * @return {undefined}
+   * @constructor
+  ###
   constructor: (file) ->
     # set paths
     @path = file
@@ -12,20 +18,22 @@ class FileHelper
     @export_path = output_path(file)
     @extension = path.basename(@path).split('.')[1]
     @target_extension = path.basename(@export_path).split('.')[1]
+    return
 
-  #
-  # @api public
-  #
-
-  # depends on set_paths
+  ###*
+   * [parse_dynamic_content description]
+   * @return {[type]} [description]
+   * @public
+   * @uses set_paths
+  ###
   parse_dynamic_content: ->
     front_matter_string = yaml_parser.match(@contents)
     if front_matter_string
       
       # set up variables
       @category_name = @path.replace(process.cwd(), "").split(path.sep)[1]
-      options.locals.site = oeq(options.locals.site, {})
-      options.locals.site[@category_name] = oeq(options.locals.site[@category_name], [])
+      options.locals.site ?= {}
+      options.locals.site[@category_name] ?= []
       @dynamic_locals = {}
       
       # load variables from front matter
@@ -49,7 +57,11 @@ class FileHelper
     else
       false
 
-  # depends on set_paths and parse_dynamic_content
+  ###*
+   * [set_layout description]
+   * @public
+   * @uses set_paths, FileHelper.parse_dynamic_content
+  ###
   set_layout: ->
     # make sure a layout actually has to be set
     layouts_set = Object.keys(global.options.layouts).length > 0
@@ -68,6 +80,12 @@ class FileHelper
     else
       false
 
+  ###*
+   * [locals description]
+   * @param {[type]} extra [description]
+   * @return {[type]} [description]
+   * @public
+  ###
   locals: (extra) ->
     locals = _.clone(global.options.locals)
     
@@ -84,6 +102,12 @@ class FileHelper
       @dynamic_locals.content = extra.yield  if extra and extra.hasOwnProperty("yield")
     locals
 
+  ###*
+   * [write description]
+   * @param {[type]} write_content [description]
+   * @return {[type]} [description]
+   * @public
+  ###
   write: (write_content) ->
     
     # if dynamic and no layout, don't write
@@ -102,16 +126,5 @@ class FileHelper
     fs.writeFileSync @export_path, write_content
     console.log "wrote: " + @export_path
     global.options.debug.log "compiled " + @path.replace(process.cwd(), "")
-
-  #
-  # @api private
-  #
-
-  # ?= or ||=, very slightly less painful
-  oeq: (a, b) ->
-    unless a
-      b
-    else
-      a
 
 module.exports = FileHelper

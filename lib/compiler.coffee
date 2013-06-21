@@ -6,7 +6,7 @@ adapters = require('./adapters')
 compress = require('./utils/compressor')
 output_path = require('./utils/output_path')
 _ = require('underscore')
-file_helper = require('./utils/file_helper')
+FileHelper = require('./utils/file_helper')
 
 class Compiler extends EventEmitter
 	###*
@@ -34,15 +34,14 @@ class Compiler extends EventEmitter
 		matching_adapters = get_adapters_by_extension(
 			path.basename(file).split('.').slice(1)
 		)
-		fh = file_helper(file)
 		matching_adapters.forEach (adapter, i) =>
+			fh = new FileHelper(file)
 			intermediate = (matching_adapters.length - i - 1 > 0)
 			
 			# front matter stays intact until the last compile pass
 			unless intermediate
 				fh.parse_dynamic_content()
 
-			console.log adapter
 			adapter.compile fh.path, fh.locals(), (err, compiled) ->
 				if err then return @emit 'error', err
 
@@ -50,7 +49,6 @@ class Compiler extends EventEmitter
 					fh.contents = compiled
 
 				write = (content) ->
-					console.log 'writing to ' + content
 					fh.write content
 					cb()
 

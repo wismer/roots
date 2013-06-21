@@ -1,12 +1,12 @@
-path = require("path")
-fs = require("fs")
-shell = require("shelljs")
-EventEmitter = require("events").EventEmitter
-adapters = require("./adapters")
-compress = require("./utils/compressor")
-output_path = require("./utils/output_path")
-_ = require("underscore")
-file_helper = require("./utils/file_helper")
+path = require('path')
+fs = require('fs')
+shell = require('shelljs')
+EventEmitter = require('events').EventEmitter
+adapters = require('./adapters')
+compress = require('./utils/compressor')
+output_path = require('./utils/output_path')
+_ = require('underscore')
+file_helper = require('./utils/file_helper')
 
 class Compiler extends EventEmitter
 	###*
@@ -22,7 +22,7 @@ class Compiler extends EventEmitter
 	 * @fires Compiler#finished
 	###
 	finish: ->
-		@emit "finished"
+		@emit 'finished'
 
 	###*
 	 * [compile description]
@@ -32,7 +32,7 @@ class Compiler extends EventEmitter
 	###
 	compile: (file, cb) ->
 		matching_adapters = get_adapters_by_extension(
-			path.basename(file).split(".").slice(1)
+			path.basename(file).split('.').slice(1)
 		)
 		fh = file_helper(file)
 		matching_adapters.forEach (adapter, i) =>
@@ -41,34 +41,30 @@ class Compiler extends EventEmitter
 			# front matter stays intact until the last compile pass
 			unless intermediate
 				fh.parse_dynamic_content()
-			
-			adapter.compile fh, (err, compiled) ->
-				if err
-					return @emit("error", err)
 
-				# if the compiler returns a function, it's probably compiling to ~html
-				to_html = typeof compiled is "function"
+			console.log adapter
+			adapter.compile fh.path, fh.locals(), (err, compiled) ->
+				if err then return @emit 'error', err
 
 				pass_through = ->
 					fh.contents = compiled
 
 				write = (content) ->
+					console.log 'writing to ' + content
 					fh.write content
 					cb()
 
 				write_file = ->
 					if fh.layout_path
-						compile_into_layout.call @, fh, adapter, compiled, (compiled_with_layout) ->
+						fh.set_layout() # set up the layout if it's compiling to html
+						compile_into_layout fh, adapter, compiled, (compiled_with_layout) ->
 							write compiled_with_layout
-					else if to_html
-						write(compiled(fh.locals()))
 					else
 						write(compiled)
 
 				if intermediate
 					return pass_through()
 				else
-					to_html and fh.set_layout() # set up the layout if it's compiling to html
 					return write_file()
 
 	###*
@@ -82,19 +78,18 @@ class Compiler extends EventEmitter
 		# TODO: Run the file copy operations as async (ncp)
 		destination = output_path(file)
 		extname = path.extname(file).slice(1)
-		types = ["html", "css", "js"]
-		if types.indexOf(extname) > 0
-			write_content = fs.readFileSync(file, "utf8")
-			if global.options.compress
-				write_content = compress(write_content, extname)
+		types = ['html', 'css', 'js']
+		if types.indexOf(extname) > 0 && global.options.compress
+			write_content = fs.readFileSync(file, 'utf8')
+			write_content = compress(write_content, extname)
 			fs.writeFileSync destination, write_content
 		else
-			if @mode is "dev"
+			if @mode is 'dev'
 				# symlink in development mode
 				fs.existsSync(destination) or fs.symlinkSync(file, destination)
 			else
-				shell.cp "-f", file, destination
-		options.debug.log "copied " + file.replace(process.cwd(), "")
+				shell.cp '-f', file, destination
+		options.debug.log "copied #{file.replace(process.cwd(), '')}"
 		cb()
 
 ###*
@@ -106,7 +101,7 @@ module.exports = Compiler
 
 # @api private
 
-plugin_path = path.join(process.cwd() + "/plugins")
+plugin_path = path.join(process.cwd() + '/plugins')
 plugins = fs.existsSync(plugin_path) and shell.ls(plugin_path)
 
 ###*
@@ -117,7 +112,7 @@ plugins = fs.existsSync(plugin_path) and shell.ls(plugin_path)
 ###
 get_adapters_by_extension = (extensions) ->
 	matching_adapters = []
-	extensions.reverse().forEach (ext) ->
+	extensions.reverse().forEach (ext) =>
 		for key of adapters
 			matching_adapters.push adapters[key]  if adapters[key].settings.file_type is ext
 
@@ -132,15 +127,6 @@ get_adapters_by_extension = (extensions) ->
  * @return {[type]} [description]
 ###
 compile_into_layout = (fh, adapter, compiled, cb) ->
-	file_mock =
-		path: fh.layout_path
-		contents: fh.layout_contents
-
-	if typeof compiled isnt "function"
-		@emit "error", "html compilers must output a function"
-
-	adapter.compile file_mock, (err, layout) ->
-		return @emit("error", err)  if err
-		page = compiled(fh.locals())
-		rendered_template = layout(fh.locals(content: page))
-		cb rendered_template
+	adapter.compile fh.layout_path, fh.locals(content: compiled), (err, layout) ->
+		if err then return @emit('error', err)
+		cb layout

@@ -69,10 +69,14 @@ class FileHelper
       
       # pull the default layout initially
       layout = options.layouts.default
+      rel_file = path.relative(options.folder_config.views, file)
       
       # if there's a custom override, use that instead
       for key of options.layouts
-        layout = options.layouts[key]  if key is file
+        layout = options.layouts[key] if key is rel_file
+
+      # no match
+      if not layout? return false
       
       # set the layout path and contents
       @layout_path = path.join(process.cwd(), options.folder_config.views, layout)

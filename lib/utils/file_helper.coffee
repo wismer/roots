@@ -76,7 +76,7 @@ class FileHelper
         layout = options.layouts[key] if key is rel_file
 
       # no match
-      if not layout? return false
+      if not layout? then return false
       
       # set the layout path and contents
       @layout_path = path.join(process.cwd(), options.folder_config.views, layout)

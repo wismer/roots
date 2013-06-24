@@ -48,7 +48,7 @@
     "faye-websocket": "0.6.x",
     "copy-paste": "0.0.x",
     "cli-js": "0.0.x",
-    "transformers": "2.x.x",
+    "transformers": "git://github.com/slang800/transformers.git",
     "optimist": "0.5.x",
     "update-notifier": "~0.1.3"
   },

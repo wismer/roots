@@ -17,7 +17,13 @@ root = __dirname
 
 files_exist = (test_path, files) ->
   for file in files
-    fs.existsSync(path.join(test_path, file)).should.be.ok
+    fs.existsSync(path.join(test_path, file)).should.equal(
+      true,
+      "expected #{path.join(test_path, file)} to exist"
+    )
+
+remove = (test_path) ->
+  shell.rm('-rf', test_path)
 
 describe 'command', ->
   basic_root = path.join root, 'basic'
@@ -47,7 +53,7 @@ describe 'command', ->
       css_content.should.not.match /\n/
     
     after ->
-      shell.rm '-rf', path.join(basic_root, 'public')
+      remove path.join(basic_root, 'public')
 
   describe 'new', ->
     test_path = path.join(root, 'testproj')
@@ -98,21 +104,21 @@ describe 'command', ->
         done()
 
     afterEach ->
-        shell.rm '-rf', path.join(root, 'testproj')
+        remove path.join(root, 'testproj')
 
   describe 'plugin', ->
     it 'should create a template inside /plugins on \'generate\'', (done) ->
       run "cd \"#{basic_root}\"; ../../bin/roots plugin generate", ->
-        fs.existsSync(path.join(basic_root, 'plugins/template.coffee')).should.be.ok
+        files_exist basic_root, ['plugins/template.coffee']
         done()
 
     it 'should use the javascript template if called with --js', (done) ->
       run "cd \"#{basic_root}\"; ../../bin/roots plugin generate --js", ->
-        fs.existsSync(path.join(basic_root, 'plugins/template.js')).should.be.ok
+        files_exist basic_root, ['plugins/template.js']
         done()
 
     afterEach ->
-        shell.rm '-rf', path.join(basic_root, 'plugins')
+        remove path.join(basic_root, 'plugins')
 
   describe 'version', ->
     it 'should output the correct version number for roots', (done) ->
@@ -137,14 +143,13 @@ describe 'command', ->
     it 'should load custom templates correctly', (done) ->
       run "./bin/roots template add test #{test_repo}", ->
         run "cd #{root}; ../bin/roots new testproj --#{test_name}", (err) ->
-          fs.existsSync(test_path).should.be.ok
-          fs.existsSync(path.join(test_path, 'package.json')).should.be.ok
+          files_exist test_path, ['/', 'package.json']
           config.remove('templates', 'test')
           done()
 
     after ->
-      shell.rm('-rf', test_path)
-      shell.rm('-rf', tmpl_path)
+      remove test_path
+      remove tmpl_path
 
 describe 'compiler', ->
   compiler = null
@@ -163,14 +168,14 @@ describe 'jade', ->
 
   it 'should compile jade view templates', (done) ->
     run "cd \"#{test_path}\"; ../../bin/roots compile --no-compress", ->
-      fs.existsSync(path.join(test_path, 'public/index.html')).should.be.ok
-      shell.rm '-rf', path.join(test_path, 'public')
+      files_exist test_path, ['public/index.html']
+      remove path.join(test_path, 'public')
       done()
 
   it 'should compile templates with no layout', (done) ->
     run "cd #{test_path_2}; ../../bin/roots compile --no-compress", ->
-      fs.existsSync(path.join(test_path_2, 'public/index.html')).should.be.ok
-      shell.rm '-rf', path.join(test_path_2, 'public')
+      files_exist test_path_2, ['public/index.html']
+      remove path.join(test_path_2, 'public')
       done()
 
 describe 'ejs', ->
@@ -178,11 +183,11 @@ describe 'ejs', ->
 
   it 'should compile ejs', (done) ->
     run "cd \"#{test_path}\"; ../../bin/roots compile --no-compress", ->
-      fs.existsSync(path.join(test_path, 'public/index.html')).should.be.ok
+      files_exist test_path, ['public/index.html']
       done()
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'coffeescript', ->
   test_path = path.join root, './coffeescript'
@@ -190,22 +195,21 @@ describe 'coffeescript', ->
 
   it 'should compile coffeescript and requires should work', (done) ->
     run "cd \"#{test_path}\"; ../../bin/roots compile --no-compress", ->
-      fs.existsSync(path.join(test_path, 'public/basic.js')).should.be.ok
-      fs.existsSync(path.join(test_path, 'public/require.js')).should.be.ok
+      files_exist test_path, ['public/basic.js', 'public/require.js']
       require_content = fs.readFileSync path.join(test_path, 'public/require.js'), 'utf8'
       require_content.should.match /BASIC/
       done()
 
   it 'should compile without closures when specified in app.coffee', (done) ->
     run "cd \"#{test_path_2}\"; ../../bin/roots compile --no-compress", ->
-      fs.existsSync(path.join(test_path_2, 'public/testz.js')).should.be.ok
+      files_exist test_path_2, ['public/testz.js']
       require_content = fs.readFileSync path.join(test_path_2, 'public/testz.js'), 'utf8'
       require_content.should.not.match /function/
       done()
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
-    shell.rm '-rf', path.join(test_path_2, 'public')
+    remove path.join(test_path, 'public')
+    remove path.join(test_path_2, 'public')
 
 describe 'stylus', ->
   test_path = path.join root, './stylus'
@@ -215,16 +219,15 @@ describe 'stylus', ->
       done()
 
   it 'should compile stylus with roots css', ->
-    fs.existsSync(path.join(test_path, 'public/basic.css')).should.be.ok
+    files_exist test_path, ['public/basic.css']
 
   it 'should include the project directory for requires', ->
-    fs.existsSync(path.join(test_path, 'public/req.css')).should.be.ok
-    fs.existsSync(path.join(test_path, 'public/nested/all.css')).should.be.ok
+    files_exist test_path, ['public/req.css', 'public/nested/all.css']
     require_content = fs.readFileSync path.join(test_path, 'public/req.css'), 'utf8'
     require_content.should.match /#000/
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'static files', ->
   test_path = path.join root, './static'
@@ -234,12 +237,12 @@ describe 'static files', ->
       done()
 
   it 'copies static files', ->
-    fs.existsSync(path.join(test_path, 'public/whatever.poop')).should.be.ok
+    files_exist test_path, ['public/whatever.poop']
     require_content = fs.readFileSync path.join(test_path, 'public/whatever.poop'), 'utf8'
     require_content.should.match /roots dont care/
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'errors', ->
   test_path = path.join root, './errors'
@@ -250,7 +253,7 @@ describe 'errors', ->
       done()
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'dynamic content', ->
   test_path = path.join root, './dynamic'
@@ -260,13 +263,16 @@ describe 'dynamic content', ->
       done()
 
   it 'compiles dynamic files', ->
-    fs.existsSync(path.join(test_path, 'public/posts/hello_world.html')).should.be.ok
+    files_exist test_path, [
+      'public/posts/hello_world.html'
+      'public/posts/second_post.html'
+    ]
     content = fs.readFileSync path.join(test_path, 'public/posts/hello_world.html'), 'utf8'
     content.should.match(/\<h1\>hello world\<\/h1\>/)
     content.should.match(/This is my first blog post/)
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'precompiled templates', ->
   test_path = path.join root, './precompile'
@@ -276,12 +282,12 @@ describe 'precompiled templates', ->
       done()
 
   it 'precompiles templates', ->
-    fs.existsSync(path.join(test_path, 'public/js/templates.js')).should.be.ok
+    files_exist test_path, ['public/js/templates.js']
     require_content = fs.readFileSync path.join(test_path, 'public/js/templates.js'), 'utf8'
     require_content.should.match(/\<p\>hello world\<\/p\>/)
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'multipass compiles', ->
   test_path = path.join root, './multipass'
@@ -291,12 +297,12 @@ describe 'multipass compiles', ->
       done()
 
   it 'will compile a single file multiple times accurately', ->
-    fs.existsSync(path.join(test_path, 'public/index.html')).should.be.ok
+    files_exist test_path, ['public/index.html']
     content = fs.readFileSync path.join(test_path, 'public/index.html'), 'utf8'
     content.should.match(/blarg world/)
 
   after ->
-    shell.rm '-rf', path.join(test_path, 'public')
+    remove path.join(test_path, 'public')
 
 describe 'deploy', ->
   deployer = null

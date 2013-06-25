@@ -10,7 +10,7 @@ Beginning with version `2.0.0`, we will be maintaining a changelog to show what 
 - in all templates, `yield` has been changed to `content`, see [visionmedia/jade#153](https://github.com/visionmedia/jade/issues/1053)
 - you can now use custom templates with roots. See [`roots template` docs](http://roots.cx/docs#templates) for details
 - multipass compilation added, [see docs](http://roots.cx/docs#multipass)
-- fixed a bug that indcreases compile speed significantly for non-ignored files and makes the compiler not bomb when you delete a file
+- fixed a bug that increases compile speed significantly for non-ignored files and makes the compiler not bomb when you delete a file
 - roots version number printed in app.coffee file on generation
 - static files now symlinked when running `watch`, increases dev speed
 - `sort` function added for easy ordering of dynamic content, [see docs](http://roots.cx/docs#dynamic)

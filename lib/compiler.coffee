@@ -34,34 +34,33 @@ class Compiler extends EventEmitter
 		matching_adapters = get_adapters_by_extension(
 			path.basename(file).split('.').slice(1)
 		)
+		fh = new FileHelper(file)
 		matching_adapters.forEach (adapter, i) =>
-			fh = new FileHelper(file)
 			intermediate = (matching_adapters.length - i - 1 > 0)
 			
 			# front matter stays intact until the last compile pass
 			unless intermediate
 				fh.parse_dynamic_content()
 
-			adapter.compile fh.path, fh.locals(), (err, compiled) =>
+			adapter.compile fh, fh.locals(), (err, compiled) =>
 				if err then return @emit 'error', err
+				fh.contents = compiled
 
-				pass_through = ->
-					fh.contents = compiled
-
-				write = (content) ->
-					fh.write content
+				write = ->
+					fh.write()
 					cb()
 
-				write_file = ->
+				write_file = =>
 					if fh.layout_path
 						fh.set_layout() # set up the layout if it's compiling to html
-						@compile_into_layout fh, adapter, (compiled_with_layout) ->
-							write compiled_with_layout
+						@compile_into_layout fh, adapter, (compiled_with_layout) =>
+							fh.contents = compiled_with_layout
+							write()
 					else
-						write(compiled)
+						write()
 
 				if intermediate
-					return pass_through()
+					return
 				else
 					return write_file()
 
@@ -99,7 +98,11 @@ class Compiler extends EventEmitter
 	 * @return {[type]} [description]
 	###
 	compile_into_layout: (fh, adapter, cb) ->
-		adapter.compile fh.layout_path, fh.locals(content: compiled), (err, layout) =>
+		layout_file =
+			contents: fh.layout_contents
+			path: fh.layout_path
+
+		adapter.compile layout_file, fh.locals(content: fh.contents), (err, layout) =>
 			if err then return @emit('error', err)
 			cb layout
 

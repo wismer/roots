@@ -8,7 +8,8 @@ exports.settings =
 exports.compile = (file, options={}, cb) ->
 	_.defaults(options,
 		minify: global.options.compress
+		filename: file.path
 	)
 
-	transformer.renderFile(file, options, cb)
+	transformer.render(file.contents, options, cb)
 	return

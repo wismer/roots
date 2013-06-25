@@ -107,27 +107,26 @@ class FileHelper
     locals
 
   ###*
-   * [write description]
-   * @param {[type]} write_content [description]
+   * write FileHelper.contents to FileHelper.path
    * @return {[type]} [description]
    * @public
   ###
-  write: (write_content) ->
+  write: () ->
     
     # if dynamic and no layout, don't write
     if @dynamic_locals and not @dynamic_locals.layout
       
       # if dynamic with content, add the compiled content to the locals
-      if write_content isnt ""
+      if @contents isnt ""
         category = options.locals.site[@category_name]
-        category[category.length - 1].content = write_content
+        category[category.length - 1].content = @contents
       
       # don't write the file
       global.options.debug.log "processed " + @path.replace(process.cwd(), "")
       return false
     
     # write it
-    fs.writeFileSync @export_path, write_content
+    fs.writeFileSync @export_path, @contents
     console.log "wrote: " + @export_path
     global.options.debug.log "compiled " + @path.replace(process.cwd(), "")
 

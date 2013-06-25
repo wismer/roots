@@ -6,7 +6,7 @@ adapters = require('./adapters')
 compress = require('./utils/compressor')
 output_path = require('./utils/output_path')
 _ = require('underscore')
-FileHelper = require('./utils/file_helper')
+Asset = require('./asset')
 
 class Compiler extends EventEmitter
 	###*
@@ -34,7 +34,7 @@ class Compiler extends EventEmitter
 		matching_adapters = get_adapters_by_extension(
 			path.basename(file).split('.').slice(1)
 		)
-		fh = new FileHelper(file)
+		fh = new Asset(file)
 		matching_adapters.forEach (adapter, i) =>
 			intermediate = (matching_adapters.length - i - 1 > 0)
 			
